@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  @media (max-width: 1024px) {
+    .sidebar-hidden {
+      transform: translateX(-100%);
+    }
+  }
+  
