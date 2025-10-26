@@ -13,31 +13,18 @@ app.use(helmet())
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Increased limit
+  max: 100, // limit each IP to 100 requests per windowMs
 })
 app.use(limiter)
 
-// Enhanced CORS configuration
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "X-Requested-With",
-      "Accept",
-      "Origin",
-      "Access-Control-Allow-Headers",
-      "Access-Control-Allow-Origin"
-    ],
-    optionsSuccessStatus: 200
-  })
-)
-
-// Handle preflight requests
-app.options("*", cors())
+// CORS configuration
+app.use(cors({
+  origin: [
+    'https://janco-frontend.vercel.app', // Your frontend URL
+    'http://localhost:3000' // For local development
+  ],
+  credentials: true
+}));
 
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }))
@@ -55,24 +42,18 @@ mongoose
 // Routes
 app.use("/api/auth", require("./routes/auth"))
 app.use("/api/users", require("./routes/users"))
-app.use("/api/attendance", require("./routes/attendance"));
+app.use("/api/attendance", require("./routes/attendance"))
 app.use("/api/salary", require("./routes/salary"))
 app.use("/api/projects", require("./routes/projects"))
 app.use("/api/tasks", require("./routes/tasks"))
 app.use("/api/expenses", require("./routes/expenses"))
-app.use("/api/transactions", require("./routes/transactions"))
 app.use("/api/materials", require("./routes/materials"))
 app.use("/api/suppliers", require("./routes/suppliers"))
 app.use("/api/purchase-orders", require("./routes/purchase-orders"))
 app.use("/api/customers", require("./routes/customers"))
 app.use("/api/finance", require("./routes/finance"))
-app.use("/api/labour", require("./routes/labour"))
 app.use("/api/dashboard", require("./routes/dashboard"))
-app.use("/api/subcontractors", require("./routes/subcontractors"))
-app.use("/api/work-schedule", require("./routes/workSchedule"))
-app.use("/api/payment-schedule", require("./routes/paymentSchedule"))
-app.use("/api/site-materials", require("./routes/siteMaterials"))
-app.use("/api/reports", require("./routes/reports"))
+app.use("/api/subcontractors", require("./routes/subcontractors")) // Added subcontractor routes for registration and appointment functionality
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
@@ -91,6 +72,35 @@ app.use((err, req, res, next) => {
     error: process.env.NODE_ENV === "development" ? err.message : {},
   })
 })
+
+// Dynamic CORS allowlist that supports production, localhost and Vercel preview domains
+const allowedOrigins = [
+  process.env.FRONTEND_URL,                 // recommended production value (set in Vercel)
+  'http://localhost:3000'                   // local dev
+].filter(Boolean)
+
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow non-browser requests like curl, server-to-server (no Origin)
+    if (!origin) return callback(null, true)
+
+    // Allow exact matches in allowlist
+    if (allowedOrigins.includes(origin)) return callback(null, true)
+
+    // Allow Vercel preview and vercel.app subdomains
+    // e.g. https://janco-frontend-grf6tgjw2-xesachis-projects.vercel.app
+    if (/\.vercel\.app$/.test(origin)) return callback(null, true)
+
+    // Otherwise block
+    return callback(new Error('CORS policy: This origin is not allowed: ' + origin), false)
+  },
+  credentials: true,
+  methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization','X-Requested-With','Accept','Origin']
+}))
+
+// Explicitly handle preflight for all routes
+app.options('*', cors())
 
 // 404 handler
 app.use("*", (req, res) => {
