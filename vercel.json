@@ -1,23 +1,16 @@
 {
-    "version": 2,
-    "builds": [
-      {
-        "src": "backend/server.js",
-        "use": "@vercel/node"
-      }
-    ],
-    "routes": [
-      {
-        "src": "/api/(.*)",
-        "dest": "backend/server.js"
-      },
-      {
-        "src": "/(.*)",
-        "dest": "backend/server.js"
-      }
-    ],
-    "env": {
-      "NODE_ENV": "production"
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
+  "env": {
+    "REACT_APP_API_URL": "@react_app_api_url",
+    "REACT_APP_CLOUDINARY_CLOUD_NAME": "@react_app_cloudinary_cloud_name",
+    "REACT_APP_CLOUDINARY_UPLOAD_PRESET": "@react_app_cloudinary_upload_preset"
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
-  }
-  
+  ]
+}
