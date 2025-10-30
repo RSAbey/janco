@@ -89,7 +89,7 @@ app.use("/api/site-materials", require("./routes/siteMaterials"))
 app.use("/api/reports", require("./routes/reports"))
 
 // Health check endpoint
-app.get("/api/health", (req, res) => {
+app.get("janco-backend.up.railway.app/api/health", (req, res) => {
   res.json({
     status: "OK",
     timestamp: new Date().toISOString(),
