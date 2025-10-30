@@ -1,18 +1,49 @@
 {
   "version": 2,
-  "builds": [
+  "buildCommand": "cd src && npm install && npm run build",
+  "outputDirectory": "src/build",
+  "env": [
+    "MONGODB_URI",
+    "JWT_SECRET",
+    "JWT_EXPIRE",
+    "FRONTEND_URL",
+    "NODE_ENV",
+    "EMAIL_HOST",
+    "EMAIL_PORT",
+    "EMAIL_USER",
+    "EMAIL_PASS",
+    "MAX_FILE_SIZE",
+    "REACT_APP_API_URL",
+    "REACT_APP_APP_NAME",
+    "REACT_APP_CLOUDINARY_CLOUD_NAME",
+    "REACT_APP_CLOUDINARY_UPLOAD_PRESET",
+    "REACT_APP_CLOUDINARY_API_KEY"
+  ],
+  "functions": {
+    "api/**/*.js": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
     {
-      "src": "server.js",
-      "use": "@vercel/node"
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
-  "routes": [
+  "headers": [
     {
-      "src": "/(.*)",
-      "dest": "server.js"
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }

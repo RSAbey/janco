@@ -17,27 +17,52 @@ const limiter = rateLimit({
 })
 app.use(limiter)
 
-// CORS configuration
-app.use(cors({
-  origin: [
-    'https://janco-frontend.vercel.app', // Your frontend URL
-    'http://localhost:3000' // For local development
-  ],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow non-browser requests like curl, server-to-server (no Origin)
+      if (!origin) return callback(null, true)
+
+      // Allow localhost for development
+      if (origin === "http://localhost:3000") return callback(null, true)
+
+      // Allow exact frontend URL from environment
+      if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) {
+        return callback(null, true)
+      }
+
+      // Allow all Vercel preview and production domains
+      if (/\.vercel\.app$/.test(origin)) return callback(null, true)
+
+      // Otherwise block
+      return callback(new Error("CORS policy: This origin is not allowed: " + origin), false)
+    },
+    credentials: true,
+    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
+  }),
+)
+
+// Explicitly handle preflight for all routes
+app.options("*", cors())
 
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }))
 app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 
-// Database connection
 mongoose
   .connect(process.env.MONGODB_URI || "mongodb://localhost:27017/janco_construction", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
   .then(() => console.log("MongoDB connected successfully"))
-  .catch((err) => console.error("MongoDB connection error:", err))
+  .catch((err) => {
+    console.error("MongoDB connection error:", err)
+    // Don't exit process on Vercel - let it retry
+    if (process.env.NODE_ENV !== "production") {
+      process.exit(1)
+    }
+  })
 
 // Routes
 app.use("/api/auth", require("./routes/auth"))
@@ -53,7 +78,7 @@ app.use("/api/purchase-orders", require("./routes/purchase-orders"))
 app.use("/api/customers", require("./routes/customers"))
 app.use("/api/finance", require("./routes/finance"))
 app.use("/api/dashboard", require("./routes/dashboard"))
-app.use("/api/subcontractors", require("./routes/subcontractors")) // Added subcontractor routes for registration and appointment functionality
+app.use("/api/subcontractors", require("./routes/subcontractors"))
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
@@ -62,6 +87,11 @@ app.get("/api/health", (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
   })
+})
+
+// 404 handler
+app.use("*", (req, res) => {
+  res.status(404).json({ message: "Route not found" })
 })
 
 // Error handling middleware
@@ -73,43 +103,11 @@ app.use((err, req, res, next) => {
   })
 })
 
-// Dynamic CORS allowlist that supports production, localhost and Vercel preview domains
-const allowedOrigins = [
-  process.env.FRONTEND_URL,                 // recommended production value (set in Vercel)
-  'http://localhost:3000'                   // local dev
-].filter(Boolean)
-
-app.use(cors({
-  origin: function(origin, callback) {
-    // Allow non-browser requests like curl, server-to-server (no Origin)
-    if (!origin) return callback(null, true)
-
-    // Allow exact matches in allowlist
-    if (allowedOrigins.includes(origin)) return callback(null, true)
-
-    // Allow Vercel preview and vercel.app subdomains
-    // e.g. https://janco-frontend-grf6tgjw2-xesachis-projects.vercel.app
-    if (/\.vercel\.app$/.test(origin)) return callback(null, true)
-
-    // Otherwise block
-    return callback(new Error('CORS policy: This origin is not allowed: ' + origin), false)
-  },
-  credentials: true,
-  methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization','X-Requested-With','Accept','Origin']
-}))
-
-// Explicitly handle preflight for all routes
-app.options('*', cors())
-
-// 404 handler
-app.use("*", (req, res) => {
-  res.status(404).json({ message: "Route not found" })
-})
-
-const PORT = process.env.PORT || 5000
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
-})
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 5000
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`)
+  })
+}
 
 module.exports = app
