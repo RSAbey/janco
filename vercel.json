@@ -3,12 +3,13 @@
   "buildCommand": "npm run build",
   "outputDirectory": "build",
   "env": {
-    "REACT_APP_API_URL": "@REACT_APP_API_URL",
-    "REACT_APP_CLOUDINARY_CLOUD_NAME": "@REACT_APP_CLOUDINARY_CLOUD_NAME",
-    "REACT_APP_CLOUDINARY_UPLOAD_PRESET": "@REACT_APP_CLOUDINARY_UPLOAD_PRESET",
-    "REACT_APP_CLOUDINARY_API_KEY": "@REACT_APP_CLOUDINARY_API_KEY",
-    "REACT_APP_APP_NAME": "@REACT_APP_APP_NAME"
+    "REACT_APP_API_URL": "@react_app_api_url",
+    "REACT_APP_APP_NAME": "@react_app_app_name",
+    "REACT_APP_CLOUDINARY_CLOUD_NAME": "@react_app_cloudinary_cloud_name",
+    "REACT_APP_CLOUDINARY_UPLOAD_PRESET": "@react_app_cloudinary_upload_preset",
+    "REACT_APP_CLOUDINARY_API_KEY": "@react_app_cloudinary_api_key"
   },
+
   "rewrites": [
     {
       "source": "/(.*)",
